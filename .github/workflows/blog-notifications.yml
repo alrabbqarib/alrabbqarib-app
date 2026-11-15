@@ -1,0 +1,150 @@
+name: Automatic Blog Notifications
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '*/15 * * * *'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: blog-notifications
+  cancel-in-progress: false
+
+jobs:
+  check-blog:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Python packages
+        run: pip install requests google-auth
+
+      - name: Check blog and send notification
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: |
+          python - <<'PY'
+          import os
+          import json
+          import requests
+          import subprocess
+          from google.oauth2 import service_account
+          from google.auth.transport.requests import Request
+
+          FEED_URL = "https://qabelteshemshatan.blogspot.com/feeds/posts/default?alt=json&max-results=1"
+          STATE_FILE = ".github/last-blog-post.txt"
+
+          response = requests.get(FEED_URL, timeout=30)
+          response.raise_for_status()
+
+          feed = response.json()
+          entries = feed.get("feed", {}).get("entry", [])
+
+          if not entries:
+              print("No blog posts found.")
+              raise SystemExit(0)
+
+          post = entries[0]
+
+          post_id = post["id"]["$t"]
+          title = post["title"]["$t"]
+
+          post_url = next(
+              link["href"]
+              for link in post["link"]
+              if link.get("rel") == "alternate"
+          )
+
+          old_id = ""
+
+          if os.path.exists(STATE_FILE):
+              with open(STATE_FILE, "r") as file:
+                  old_id = file.read().strip()
+
+          if not old_id:
+              with open(STATE_FILE, "w") as file:
+                  file.write(post_id)
+
+              print("First run: saved latest post without sending notification.")
+
+          elif post_id == old_id:
+              print("No new post.")
+              raise SystemExit(0)
+
+          else:
+              print("New post found:", title)
+
+              service_account_info = json.loads(
+                  os.environ["FIREBASE_SERVICE_ACCOUNT"]
+              )
+
+              credentials = service_account.Credentials.from_service_account_info(
+                  service_account_info,
+                  scopes=["https://www.googleapis.com/auth/firebase.messaging"]
+              )
+
+              credentials.refresh(Request())
+
+              fcm_url = (
+                  "https://fcm.googleapis.com/v1/projects/"
+                  "qabel-teshemshatan/messages:send"
+              )
+
+              message = {
+                  "message": {
+                      "topic": "blog_updates",
+                      "data": {
+                          "title": title,
+                          "body": "تم نشر موضوع جديد. اضغط لقراءته.",
+                          "url": post_url
+                      }
+                  }
+              }
+
+              result = requests.post(
+                  fcm_url,
+                  headers={
+                      "Authorization": f"Bearer {credentials.token}",
+                      "Content-Type": "application/json"
+                  },
+                  json=message,
+                  timeout=30
+              )
+
+              print("Firebase status:", result.status_code)
+              print("Firebase response:", result.text)
+              result.raise_for_status()
+
+              with open(STATE_FILE, "w") as file:
+                  file.write(post_id)
+
+              print("Notification sent successfully.")
+
+          subprocess.run(
+              ["git", "config", "user.name", "github-actions[bot]"],
+              check=True
+          )
+
+          subprocess.run(
+              ["git", "config", "user.email", "41898282+github-actions[bot]@users.noreply.github.com"],
+              check=True
+          )
+
+          subprocess.run(["git", "add", STATE_FILE], check=True)
+
+          changed = subprocess.run(
+              ["git", "diff", "--cached", "--quiet"]
+          ).returncode != 0
+
+          if changed:
+              subprocess.run(
+                  ["git", "commit", "-m", "Update last notified blog post"],
+                  check=True
+              )
+              subprocess.run(["git", "push"], check=True)
+
+          PY
