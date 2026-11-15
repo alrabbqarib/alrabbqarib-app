@@ -1,0 +1,59 @@
+name: Test Firebase Notification
+
+on:
+  workflow_dispatch:
+
+jobs:
+  send-notification:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Install Python packages
+        run: pip install google-auth requests
+
+      - name: Send test notification
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          FCM_DEVICE_TOKEN: ${{ secrets.FCM_DEVICE_TOKEN }}
+        run: |
+          python - <<'PY'
+          import os
+          import json
+          import requests
+          from google.oauth2 import service_account
+          from google.auth.transport.requests import Request
+
+          service_account_info = json.loads(os.environ["FIREBASE_SERVICE_ACCOUNT"])
+          token = os.environ["FCM_DEVICE_TOKEN"]
+
+          credentials = service_account.Credentials.from_service_account_info(
+              service_account_info,
+              scopes=["https://www.googleapis.com/auth/firebase.messaging"]
+          )
+          credentials.refresh(Request())
+
+          url = "https://fcm.googleapis.com/v1/projects/qabel-teshemshatan/messages:send"
+
+          message = {
+              "message": {
+                  "token": token,
+                  "notification": {
+                      "title": "الرب قريب لمن يدعوه",
+                      "body": "نجاح الاختبار! ستصلك إشعارات عند نشر مواضيع جديدة."
+                  }
+              }
+          }
+
+          response = requests.post(
+              url,
+              headers={
+                  "Authorization": f"Bearer {credentials.token}",
+                  "Content-Type": "application/json"
+              },
+              json=message
+          )
+
+          print("HTTP status:", response.status_code)
+          print("Firebase response:", response.text)
+          response.raise_for_status()
+          PY
