@@ -1,3 +1,4 @@
+```java
 package com.alrabbqarib.app;
 
 import android.app.Notification;
@@ -14,17 +15,21 @@ import com.google.firebase.messaging.RemoteMessage;
 public class MyFirebaseMessagingService extends FirebaseMessagingService {
 
     private static final String CHANNEL_ID = "blog_notifications";
+    private static final String BLOG_URL =
+            "https://qabelteshemshatan.blogspot.com/";
 
     @Override
     public void onMessageReceived(RemoteMessage remoteMessage) {
 
         String title = "الرب قريب لمن يدعوه";
         String body = "تم نشر موضوع جديد في المدونة";
+        String url = BLOG_URL;
 
         if (remoteMessage.getNotification() != null) {
             if (remoteMessage.getNotification().getTitle() != null) {
                 title = remoteMessage.getNotification().getTitle();
             }
+
             if (remoteMessage.getNotification().getBody() != null) {
                 body = remoteMessage.getNotification().getBody();
             }
@@ -38,13 +43,18 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
             body = remoteMessage.getData().get("body");
         }
 
-        showNotification(title, body);
+        if (remoteMessage.getData().containsKey("url")) {
+            url = remoteMessage.getData().get("url");
+        }
+
+        showNotification(title, body, url);
     }
 
-    private void showNotification(String title, String body) {
+    private void showNotification(String title, String body, String url) {
 
         NotificationManager manager =
-                (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+                (NotificationManager) getSystemService(
+                        Context.NOTIFICATION_SERVICE);
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             NotificationChannel channel = new NotificationChannel(
@@ -52,18 +62,22 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
                     "إشعارات المدونة",
                     NotificationManager.IMPORTANCE_DEFAULT
             );
+
             manager.createNotificationChannel(channel);
         }
 
         Intent intent = new Intent(this, MainActivity.class);
-        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        intent.putExtra("url", url);
+        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP |
+                Intent.FLAG_ACTIVITY_SINGLE_TOP);
 
         PendingIntent pendingIntent = PendingIntent.getActivity(
                 this,
                 0,
                 intent,
                 PendingIntent.FLAG_UPDATE_CURRENT |
-                        (Build.VERSION.SDK_INT >= 23 ? PendingIntent.FLAG_IMMUTABLE : 0)
+                        (Build.VERSION.SDK_INT >= 23
+                                ? PendingIntent.FLAG_IMMUTABLE : 0)
         );
 
         Notification.Builder builder;
@@ -85,3 +99,4 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
         manager.notify((int) System.currentTimeMillis(), notification);
     }
 }
+```
