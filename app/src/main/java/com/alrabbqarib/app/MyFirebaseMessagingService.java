@@ -1,4 +1,3 @@
-```java
 package com.alrabbqarib.app;
 
 import android.app.Notification;
@@ -15,6 +14,7 @@ import com.google.firebase.messaging.RemoteMessage;
 public class MyFirebaseMessagingService extends FirebaseMessagingService {
 
     private static final String CHANNEL_ID = "blog_notifications";
+
     private static final String BLOG_URL =
             "https://qabelteshemshatan.blogspot.com/";
 
@@ -26,6 +26,7 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
         String url = BLOG_URL;
 
         if (remoteMessage.getNotification() != null) {
+
             if (remoteMessage.getNotification().getTitle() != null) {
                 title = remoteMessage.getNotification().getTitle();
             }
@@ -47,6 +48,10 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
             url = remoteMessage.getData().get("url");
         }
 
+        if (url == null || !url.startsWith(BLOG_URL)) {
+            url = BLOG_URL;
+        }
+
         showNotification(title, body, url);
     }
 
@@ -54,9 +59,11 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
 
         NotificationManager manager =
                 (NotificationManager) getSystemService(
-                        Context.NOTIFICATION_SERVICE);
+                        Context.NOTIFICATION_SERVICE
+                );
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+
             NotificationChannel channel = new NotificationChannel(
                     CHANNEL_ID,
                     "إشعارات المدونة",
@@ -67,17 +74,21 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
         }
 
         Intent intent = new Intent(this, MainActivity.class);
+
         intent.putExtra("url", url);
-        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP |
-                Intent.FLAG_ACTIVITY_SINGLE_TOP);
+
+        intent.addFlags(
+                Intent.FLAG_ACTIVITY_CLEAR_TOP |
+                Intent.FLAG_ACTIVITY_SINGLE_TOP
+        );
 
         PendingIntent pendingIntent = PendingIntent.getActivity(
                 this,
                 0,
                 intent,
                 PendingIntent.FLAG_UPDATE_CURRENT |
-                        (Build.VERSION.SDK_INT >= 23
-                                ? PendingIntent.FLAG_IMMUTABLE : 0)
+                (Build.VERSION.SDK_INT >= 23
+                        ? PendingIntent.FLAG_IMMUTABLE : 0)
         );
 
         Notification.Builder builder;
@@ -96,7 +107,9 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
                 .setContentIntent(pendingIntent)
                 .build();
 
-        manager.notify((int) System.currentTimeMillis(), notification);
+        manager.notify(
+                (int) System.currentTimeMillis(),
+                notification
+        );
     }
 }
-```
