@@ -37,9 +37,10 @@ jobs:
           message = {
               "message": {
                   "token": token,
-                  "notification": {
+                  "data": {
                       "title": "الرب قريب لمن يدعوه",
-                      "body": "نجاح الاختبار! ستصلك إشعارات عند نشر مواضيع جديدة."
+                      "body": "اضغط هنا لقراءة الموضوع الجديد",
+                      "url": "https://qabelteshemshatan.blogspot.com/2026/11/blog-post_518.html"
                   }
               }
           }
