@@ -1,4 +1,3 @@
-```java
 package com.alrabbqarib.app;
 
 import android.app.Activity;
@@ -6,12 +5,12 @@ import android.os.Bundle;
 import android.os.Build;
 import android.Manifest;
 import android.content.pm.PackageManager;
+import android.content.Intent;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;
 import android.view.View;
-import android.webkit.WebResourceRequest;
 
 import com.google.firebase.messaging.FirebaseMessaging;
 
@@ -32,7 +31,8 @@ public class MainActivity extends Activity {
 
         requestNotificationPermission();
 
-        FirebaseMessaging.getInstance().subscribeToTopic("blog_updates");
+        FirebaseMessaging.getInstance()
+                .subscribeToTopic("blog_updates");
 
         webView = new WebView(this);
         setContentView(webView);
@@ -43,20 +43,13 @@ public class MainActivity extends Activity {
         settings.setLoadWithOverviewMode(true);
         settings.setUseWideViewPort(true);
 
-        webView.setWebViewClient(new WebViewClient() {
-            @Override
-            public boolean shouldOverrideUrlLoading(
-                    WebView view, WebResourceRequest request) {
-                return false;
-            }
-        });
-
+        webView.setWebViewClient(new WebViewClient());
         webView.setWebChromeClient(new WebChromeClient());
 
         openNotificationPage(getIntent());
     }
 
-    private void openNotificationPage(android.content.Intent intent) {
+    private void openNotificationPage(Intent intent) {
 
         String url = null;
 
@@ -64,8 +57,7 @@ public class MainActivity extends Activity {
             url = intent.getStringExtra("url");
         }
 
-        if (url != null &&
-                url.startsWith(BLOG_URL)) {
+        if (url != null && url.startsWith(BLOG_URL)) {
             webView.loadUrl(url);
         } else {
             webView.loadUrl(BLOG_URL);
@@ -73,7 +65,7 @@ public class MainActivity extends Activity {
     }
 
     @Override
-    protected void onNewIntent(android.content.Intent intent) {
+    protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
         setIntent(intent);
         openNotificationPage(intent);
@@ -86,7 +78,9 @@ public class MainActivity extends Activity {
                         != PackageManager.PERMISSION_GRANTED) {
 
             requestPermissions(
-                    new String[]{Manifest.permission.POST_NOTIFICATIONS},
+                    new String[]{
+                            Manifest.permission.POST_NOTIFICATIONS
+                    },
                     100
             );
         }
@@ -94,6 +88,7 @@ public class MainActivity extends Activity {
 
     @Override
     public void onBackPressed() {
+
         if (webView != null && webView.canGoBack()) {
             webView.goBack();
         } else {
@@ -101,4 +96,3 @@ public class MainActivity extends Activity {
         }
     }
 }
-```
