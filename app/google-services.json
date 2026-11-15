@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1082116071377",
+    "project_id": "qabel-teshemshatan",
+    "storage_bucket": "qabel-teshemshatan.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1082116071377:android:6c3f421cd823a35ba44af0",
+        "android_client_info": {
+          "package_name": "com.alrabbqarib.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD8ZWDQg1fn1Ifayox0ordkB49AfHpg-nM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
